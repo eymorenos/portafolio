@@ -1,0 +1,270 @@
+<html><head><base href="https://websim.ai/futuristic-3d-portfolio/"/><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Futuristic 3D Portfolio - Responsive</title><script src="https://unpkg.com/react@17/umd/react.production.min.js"></script><script src="https://unpkg.com/react-dom@17/umd/react-dom.production.min.js"></script><script src="https://unpkg.com/three@0.132.2/build/three.min.js"></script><script src="https://unpkg.com/@babel/standalone/babel.min.js"></script><script src="https://cdn.tailwindcss.com"></script><style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+  body {
+    font-family: 'Orbitron', sans-serif;
+    background: linear-gradient(135deg, #000428, #004e92);
+    color: #ffffff;
+    overflow-x: hidden;
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    transform: translateZ(20px);
+    transition: all 0.3s ease;
+  }
+
+  .glass-card:hover {
+    transform: translateZ(30px) scale(1.05);
+    box-shadow: 0 12px 48px 0 rgba(31, 38, 135, 0.5);
+  }
+
+  .glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes glow {
+    from {
+      box-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 15px #00ffff;
+    }
+    to {
+      box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff;
+    }
+  }
+
+  .parallax {
+    will-change: transform;
+    transition: transform 0.1s ease-out;
+  }
+
+  .off-canvas-menu {
+    position: fixed;
+    top: 0;
+    right: -300px;
+    width: 300px;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    transition: right 0.3s ease-in-out;
+    z-index: 1000;
+  }
+
+  .off-canvas-menu.open {
+    right: 0;
+  }
+
+  .menu-toggle {
+    display: none;
+  }
+
+  @media (max-width: 768px) {
+    .menu-toggle {
+      display: block;
+    }
+  }
+
+  .section-header {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 50px;
+    padding: 10px 30px;
+    display: inline-block;
+    margin: 0 auto;
+  }
+</style></head><body>
+<div id="root"></div>
+<script type="text/babel">
+  const { useState, useEffect, useRef } = React;
+
+  const Nav = ({ scrollTo }) => {
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    const toggleMenu = () => {
+      setIsMenuOpen(!isMenuOpen);
+    };
+
+    const menuItems = ['Home', 'About', 'Services', 'Portfolio', 'Contact'];
+
+    return (
+      <>
+        <nav className="fixed top-0 left-0 right-0 z-50 p-4 flex justify-between items-center">
+          <div className="text-2xl font-bold">Logo</div>
+          <ul className="hidden md:flex space-x-8">
+            {menuItems.map((item) => (
+              <li key={item}>
+                <button
+                  onClick={() => scrollTo(item.toLowerCase())}
+                  className="text-white hover:text-cyan-400 transition-colors duration-300"
+                >
+                  {item}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <button onClick={toggleMenu} className="menu-toggle md:hidden text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </nav>
+        <div className={`off-canvas-menu ${isMenuOpen ? 'open' : ''}`}>
+          <div className="p-4">
+            <button onClick={toggleMenu} className="text-white mb-8">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <ul className="space-y-4">
+              {menuItems.map((item) => (
+                <li key={item}>
+                  <button
+                    onClick={() => {
+                      scrollTo(item.toLowerCase());
+                      toggleMenu();
+                    }}
+                    className="text-white hover:text-cyan-400 transition-colors duration-300"
+                  >
+                    {item}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  const Section = ({ id, title, children }) => (
+    <section id={id} className="min-h-screen flex items-center justify-center py-20">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-center mb-8">
+          <h2 className="text-3xl md:text-4xl font-bold text-center glow section-header">{title}</h2>
+        </div>
+        {children}
+      </div>
+    </section>
+  );
+
+  const Card = ({ title, content }) => (
+    <div className="glass-card p-6 m-4">
+      <h3 className="text-xl font-bold mb-4">{title}</h3>
+      <p>{content}</p>
+    </div>
+  );
+
+  const App = () => {
+    const [scrollY, setScrollY] = useState(0);
+    const canvasRef = useRef(null);
+    const torusKnotRef = useRef(null);
+
+    useEffect(() => {
+      const handleScroll = () => setScrollY(window.scrollY);
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    useEffect(() => {
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      const geometry = new THREE.TorusKnotGeometry(10, 3, 100, 16);
+      const material = new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true });
+      const torusKnot = new THREE.Mesh(geometry, material);
+      scene.add(torusKnot);
+      torusKnotRef.current = torusKnot;
+
+      camera.position.z = 30;
+
+      const animate = () => {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      };
+
+      animate();
+
+      const handleResize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      };
+
+      window.addEventListener('resize', handleResize);
+
+      return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
+    useEffect(() => {
+      if (torusKnotRef.current) {
+        torusKnotRef.current.rotation.x = scrollY * 0.002;
+        torusKnotRef.current.rotation.y = scrollY * 0.002;
+      }
+    }, [scrollY]);
+
+    const scrollTo = (id) => {
+      const element = document.getElementById(id);
+      element.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    return (
+      <div className="relative">
+        <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full -z-10" />
+        <Nav scrollTo={scrollTo} />
+        <main>
+          <Section id="home" title="Welcome to the Future">
+            <div className="text-center">
+              <p className="text-lg md:text-xl mb-8">Experience the next level of web design</p>
+              <button className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded-full transition-colors duration-300 glow">
+                Explore Now
+              </button>
+            </div>
+          </Section>
+          <Section id="about" title="About Us">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <Card title="Our Vision" content="Pushing the boundaries of digital experiences." />
+              <Card title="Our Mission" content="Creating immersive and futuristic web solutions." />
+            </div>
+          </Section>
+          <Section id="services" title="Our Services">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <Card title="3D Web Design" content="Bringing depth to your digital presence." />
+              <Card title="Interactive UX" content="Engaging user experiences that captivate." />
+              <Card title="Futuristic Branding" content="Position your brand at the forefront of innovation." />
+            </div>
+          </Section>
+          <Section id="portfolio" title="Portfolio">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="glass-card aspect-video"></div>
+              ))}
+            </div>
+          </Section>
+          <Section id="contact" title="Contact Us">
+            <form className="max-w-lg mx-auto glass-card p-8">
+              <div className="mb-4">
+                <input type="text" placeholder="Name" className="w-full p-2 bg-transparent border border-cyan-500 rounded" />
+              </div>
+              <div className="mb-4">
+                <input type="email" placeholder="Email" className="w-full p-2 bg-transparent border border-cyan-500 rounded" />
+              </div>
+              <div className="mb-4">
+                <textarea placeholder="Message" rows="4" className="w-full p-2 bg-transparent border border-cyan-500 rounded"></textarea>
+              </div>
+              <button type="submit" className="w-full bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-2 px-4 rounded transition-colors duration-300 glow">
+                Send Message
+              </button>
+            </form>
+          </Section>
+        </main>
+      </div>
+    );
+  };
+
+  ReactDOM.render(<App />, document.getElementById('root'));
+</script>
+</body></html>
